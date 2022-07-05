@@ -3,14 +3,14 @@ import os
 import pathlib
 import requests
 from datetime import datetime
-
+import time
 
 PATH_TO_DIR = './'
 SAVED_FILENAME = 'file_list.txt'
 URL = 'http://192.168.1.1'
 TOKEN = 'd24e3rsdfs3rwefsdfse3rwerwerfsdf'
 DEVICE_ID = 1
-
+UPDATE_DELAY_SECONDS = 60*10
 
 def create_file_if_not_exists(PATH_TO_DIR, SAVED_FILENAME):
     path = PATH_TO_DIR + '/' + SAVED_FILENAME
@@ -73,5 +73,13 @@ def main():
         except Exception as e:
             print(e)
 
+def loop():
+    while True:
+        print('running')
+        main()
+        time.sleep(UPDATE_DELAY_SECONDS)
+
+
 if __name__ == "__main__":
-    main()
+    # main()
+    loop()
