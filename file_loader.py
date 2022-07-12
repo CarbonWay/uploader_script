@@ -5,15 +5,19 @@ import requests
 from datetime import datetime
 import time
 
-PATH_TO_DIR = './'
-SAVED_FILENAME = 'file_list.txt'
-URL = 'http://192.168.1.1'
-TOKEN = 'd24e3rsdfs3rwefsdfse3rwerwerfsdf'
-DEVICE_ID = 1
+PATH_TO_DIR = './data'
+SAVED_FILENAME_PATH = 'file_list.txt'
+
+# URL = 'http://192.168.0.1:8001/loader/upload'
+
+URL = 'http://127.0.0.1:8000/loader/upload'
+
+TOKEN = 'fqGuqZMmWSBAeTIawQXrQvls4od0uDhiZa8bJcGV9GI'
+DEVICE_ID = 5
 UPDATE_DELAY_SECONDS = 60*10
 
-def create_file_if_not_exists(PATH_TO_DIR, SAVED_FILENAME):
-    path = PATH_TO_DIR + '/' + SAVED_FILENAME
+def create_file_if_not_exists(SAVED_FILENAME_PATH):
+    path = SAVED_FILENAME_PATH
     try:
         file = open(path, 'r')
         file.close()
@@ -23,14 +27,14 @@ def create_file_if_not_exists(PATH_TO_DIR, SAVED_FILENAME):
         file.close()
         print('%s is created' % (path))
 
-def read_saved_filenames(path, filename):
+def read_saved_filenames(path_to_filename):
     saved_files = []
-    with open(path + '//' + filename, 'r') as f:
+    with open(path_to_filename, 'r') as f:
         saved_files = [line.rstrip('\n') for line in f]
     return saved_files
 
-def save_filenames(files, base_dir, filename):
-    path = base_dir + '/' + filename
+def save_filenames(files, path_to_filename):
+    path = path_to_filename
 
     with open(path, 'w') as f:
         for s in files:
@@ -39,22 +43,31 @@ def save_filenames(files, base_dir, filename):
 def get_files(PATH_TO_DIR, SAVED_FILENAME):
     files = list(pathlib.Path(PATH_TO_DIR).glob('**/*.*'))
     files = [file.__str__() for file in files]
-    files.remove(SAVED_FILENAME)
+    print(files)
+    if SAVED_FILENAME in files:
+        print('removing file from list', SAVED_FILENAME)
+        files.remove(SAVED_FILENAME)
+    if PATH_TO_DIR + '/' + SAVED_FILENAME in files:
+        print('removing file from list 2', SAVED_FILENAME)
+        files.remove(PATH_TO_DIR + '/' + SAVED_FILENAME)
+
     return files
 
 def send_data(URL, file, values):
-    r = requests.post(URL, files=file, data=values)
+    r = requests.post(URL, files=file, data=values, cookies={'def': 'defvalue'})
     return r
 
 def main():
-    create_file_if_not_exists(PATH_TO_DIR, SAVED_FILENAME)
-    files = get_files(PATH_TO_DIR, SAVED_FILENAME)
-    saved_files = read_saved_filenames(PATH_TO_DIR, SAVED_FILENAME)
+    create_file_if_not_exists(SAVED_FILENAME_PATH)
+    files = get_files(PATH_TO_DIR, SAVED_FILENAME_PATH)
+    saved_files = read_saved_filenames(SAVED_FILENAME_PATH)
     print(files)
     print('saved', saved_files)
 
     for filename in files:
         try:
+            if filename in saved_files:
+                break
             file =  { filename: open(filename) }
             now = datetime.now()
             date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -63,12 +76,13 @@ def main():
                 'token': TOKEN,
                 'device': DEVICE_ID,
             }
+            print('sending', filename)
             response = send_data(URL, file, values)
 
             print(response.status_code)
             if response.status_code == 200:
                 saved_files.append(filename)
-                save_filenames(saved_files, PATH_TO_DIR, SAVED_FILENAME)
+                save_filenames(saved_files, SAVED_FILENAME_PATH)
 
         except Exception as e:
             print(e)
@@ -81,5 +95,4 @@ def loop():
 
 
 if __name__ == "__main__":
-    # main()
     loop()
