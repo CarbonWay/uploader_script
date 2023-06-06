@@ -68,7 +68,7 @@ def main():
         try:
             if filename in saved_files:
                 break
-            file =  { filename: open(filename) }
+            file =  { filename: open(filename, 'rb') }
             now = datetime.now()
             date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
             values = {
