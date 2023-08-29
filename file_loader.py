@@ -7,25 +7,18 @@ import time
 
 PATH_TO_DIR = './data'
 SAVED_FILENAME_PATH = 'file_list.txt'
-
-# URL = 'http://192.168.0.1:8001/loader/upload'
-
-URL = 'http://127.0.0.1:8000/loader/upload'
-
-TOKEN = 'fqGuqZMmWSBAeTIawQXrQvls4od0uDhiZa8bJcGV9GI'
-DEVICE_ID = 5
+URL = 'http://127.0.0.1:8000/'
+TOKEN = 'token'
+DEVICE_ID = 0
 UPDATE_DELAY_SECONDS = 60*10
 
-def create_file_if_not_exists(SAVED_FILENAME_PATH):
-    path = SAVED_FILENAME_PATH
-    try:
-        file = open(path, 'r')
-        file.close()
-        print('%s is exists' % (path))
-    except IOError:
-        file = open(path, 'w')
-        file.close()
-        print('%s is created' % (path))
+def load_file_list(SAVED_FILENAME_PATH):
+    req_url = URL + 'loader/load-file-list'
+    r = requests.post(req_url, data={'token': TOKEN})
+    saved_file_list = r.json()['files']
+    with open(SAVED_FILENAME_PATH, 'w') as f:
+        for item in saved_file_list:
+            f.write("%s\n" % item)
 
 def read_saved_filenames(path_to_filename):
     saved_files = []
@@ -43,7 +36,6 @@ def save_filenames(files, path_to_filename):
 def get_files(PATH_TO_DIR, SAVED_FILENAME):
     files = list(pathlib.Path(PATH_TO_DIR).glob('**/*.*'))
     files = [file.__str__() for file in files]
-    print(files)
     if SAVED_FILENAME in files:
         print('removing file from list', SAVED_FILENAME)
         files.remove(SAVED_FILENAME)
@@ -53,16 +45,17 @@ def get_files(PATH_TO_DIR, SAVED_FILENAME):
 
     return files
 
-def send_data(URL, file, values):
-    r = requests.post(URL, files=file, data=values, cookies={'def': 'defvalue'})
+def send_data(file, values):
+    req_URL = URL + 'loader/upload'
+    r = requests.post(req_URL, files=file, data=values, cookies={'def': 'defvalue'})
     return r
 
 def main():
-    create_file_if_not_exists(SAVED_FILENAME_PATH)
+    load_file_list(SAVED_FILENAME_PATH)
     files = get_files(PATH_TO_DIR, SAVED_FILENAME_PATH)
     saved_files = read_saved_filenames(SAVED_FILENAME_PATH)
-    print(files)
-    print('saved', saved_files)
+    print('found files', files)
+    print('server files', saved_files)
 
     for filename in files:
         try:
@@ -77,9 +70,8 @@ def main():
                 'device': DEVICE_ID,
             }
             print('sending', filename)
-            response = send_data(URL, file, values)
+            response = send_data(file, values)
 
-            print(response.status_code)
             if response.status_code == 200:
                 saved_files.append(filename)
                 save_filenames(saved_files, SAVED_FILENAME_PATH)
